@@ -11,6 +11,7 @@ Dataset yang digunakan adalah "Bike Sharing Dataset" dari Capital Bikeshare.
    conda create --name bike-sharing python=3.9
    conda activate bike-sharing
    pip install -r requirements.txt
+   ```
 
 ## Setup Environment - Shell/Terminal
    ```bash
@@ -19,6 +20,7 @@ Dataset yang digunakan adalah "Bike Sharing Dataset" dari Capital Bikeshare.
    pipenv install
    pipenv shell
    pip install -r requirements.txt
+   ```
 
 ## Run Streamlit App
    ```bash
