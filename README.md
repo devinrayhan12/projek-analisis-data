@@ -15,3 +15,7 @@ Dataset yang digunakan adalah "Bike Sharing Dataset" dari Capital Bikeshare.
 2. Instalasi library:
    ```bash
    pip install pandas streamlit matplotlib seaborn
+   
+Run Streamlit App:
+   ```bash
+   streamlit run dashboard/dashboard.py
