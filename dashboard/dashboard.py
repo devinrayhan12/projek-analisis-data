@@ -3,12 +3,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 
-# Set page config
 st.set_page_config(page_title="Bike Sharing Dashboard", layout="wide")
 
 # --- LOAD DATA ---
-# PENTING: Gunakan data per jam (hour) agar bisa menampilkan perbandingan jam
-df = pd.read_csv("dashboard/main_data_hour.csv") 
+df = pd.read_csv("dashboard/main_data.csv") 
 df['dteday'] = pd.to_datetime(df['dteday'])
 if 'weathersit_label' not in df.columns:
     weather_map = {
@@ -21,10 +19,10 @@ if 'weathersit_label' not in df.columns:
 df['year'] = df['dteday'].dt.year
 df['month'] = df['dteday'].dt.month_name()
 
-# Menambahkan label untuk kategori hari agar mudah dibaca di legenda
+# Menambahkan label untuk kategori hari
 df['day_type'] = df['workingday'].apply(lambda x: 'Working Day' if x == 1 else 'Holiday/Weekend')
 
-# --- SIDEBAR (FILTER BERJENJANG) ---
+# --- SIDEBAR---
 st.sidebar.header("Filter Eksplorasi")
 
 # 1. Pilih Tahun
@@ -64,7 +62,7 @@ with col1:
     sns.barplot(x='weathersit_label', y='cnt', data=weather_rent, palette='Blues_r', ax=ax, hue='weathersit_label', legend=False)
     st.pyplot(fig)
 
-# Visualisasi 2: Perbandingan Jam (Line Chart - INI PERBAIKAN REVISI)
+# Visualisasi 2: Perbandingan Jam
 with col2:
     st.subheader("2. Perbandingan Jam Lonjakan: Hari Kerja vs Libur")
     
@@ -76,7 +74,7 @@ with col2:
         data=hourly_compare, 
         x='hr', 
         y='cnt', 
-        hue='day_type', # Ini elemen "Comparison" yang diminta reviewer
+        hue='day_type', 
         marker='o',
         ax=ax
     )
@@ -90,4 +88,3 @@ with col2:
 st.write("**Analisis:** Terlihat perbedaan kontras di mana hari kerja memiliki dua puncak (pagi & sore), sedangkan hari libur cenderung melonjak di tengah hari.")
 
 st.divider()
-st.caption('Copyright (c) 2024 - Devin Rayhan Putra Aswin')
