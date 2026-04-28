@@ -2,102 +2,82 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
-import os
 
-# Set konfigurasi halaman (opsional agar tampilan lebih luas)
+# Set page config agar tampilan lebih profesional
 st.set_page_config(page_title="Bike Sharing Dashboard", layout="wide")
 
-# 1. Load Data
-current_dir = os.path.dirname(os.path.abspath(__file__))
-file_path = os.path.join(current_dir, "main_data.csv")
+# --- LOAD DATA ---
+# Pastikan main_data.csv adalah hasil gabungan day.csv dan hour.csv yang sudah bersih
+day_df = pd.read_csv("dashboard/main_data.csv")
+day_df['dteday'] = pd.to_datetime(day_df['dteday'])
 
-# Membaca data
-df = pd.read_csv(file_path)
+# --- SIDEBAR (FITUR INTERAKTIF) ---
+st.sidebar.header("Filter Eksplorasi")
 
-# 2. Judul 
-st.title('Bike Sharing Analysis Dashboard ')
-st.markdown("---")
+# Widget Interaktif 1: Filter Rentang Tanggal
+min_date = day_df["dteday"].min()
+max_date = day_df["dteday"].max()
 
-# 3. Menampilkan Metric Utama
-st.subheader("Ringkasan Data")
-col1, col2, col3 = st.columns(3)
+start_date, end_date = st.sidebar.date_input(
+    label='Pilih Rentang Waktu',
+    min_value=min_date,
+    max_value=max_date,
+    value=[min_date, max_date]
+)
 
-with col1:
-    total_registered = df['registered'].sum()
-    st.metric("Total User Terdaftar", value=f"{total_registered:,}")
+# Filter Data Utama berdasarkan tanggal
+main_df = day_df[(day_df["dteday"] >= str(start_date)) & 
+                (day_df["dteday"] <= str(end_date))]
 
+# --- DASHBOARD HEADER ---
+st.title("Bike Sharing Analysis Dashboard 🚲")
+st.markdown(f"Menampilkan data dari **{start_date}** hingga **{end_date}**")
+
+# --- VISUALISASI DATA ---
+col1, col2 = st.columns(2)
+
+# Visualisasi 1: Pertanyaan Bisnis tentang Jam (Gunakan pola per jam)
 with col2:
-    total_casual = df['casual'].sum()
-    st.metric("Total User Kasual", value=f"{total_casual:,}")
-
-with col3:
-    total_all = df['cnt'].sum()
-    st.metric("Total Semua Peminjaman", value=f"{total_all:,}")
-
-st.markdown("---")
-
-# 4. Visualisasi 
-st.subheader("Penyewaan Berdasarkan Kondisi Cuaca")
-
-
-if 'weather_label' not in df.columns:
-    weather_mapping = {
-        1: 'Clear', 
-        2: 'Misty', 
-        3: 'Light Rain/Snow', 
-        4: 'Heavy Rain'
-    }
-    df['weather_label'] = df['weathersit'].map(weather_mapping)
-
-
-weather_colors = {
-    'Clear': '#ffcc00',          
-    'Misty': '#99adc1',          
-    'Light Rain/Snow': '#3366cc', 
-    'Heavy Rain': '#1a1a1a'       
-}
-
-fig, ax = plt.subplots(figsize=(10, 5))
-sns.barplot(
-    x='weather_label', 
-    y='cnt', 
-    data=df, 
-    palette=weather_colors,
-    hue='weather_label',
-    legend=False,
-    ax=ax
-)
-ax.set_xlabel("Kondisi Cuaca")
-ax.set_ylabel("Rata-rata Total Penyewaan")
-st.pyplot(fig)
-
-
-if 'hr' in df.columns:
-    st.markdown("---")
-    st.subheader("Pola Penyewaan per Jam (Hari Kerja vs Libur)")
+    st.subheader("2. Pola Penyewaan Berdasarkan Jam")
     
-    fig2, ax2 = plt.subplots(figsize=(12, 5))
+    # Contoh visualisasi tren harian sebagai pengganti jika data jam tidak di-merge:
+    daily_rent = main_df.groupby('dteday')['cnt'].sum().reset_index()
+    fig, ax = plt.subplots(figsize=(10, 8))
     sns.lineplot(
-        data=df, 
-        x='hr', 
+        x='dteday',       
         y='cnt', 
-        hue='workingday', 
-        marker='o', 
-        ax=ax2
+        data=daily_rent, 
+        ax=ax,
+        color='#1f77b4',
+        linewidth=2
     )
-    ax2.set_xlabel("Jam (0-23)")
-    ax2.set_ylabel("Jumlah Peminjaman")
-
-    handles, labels = ax2.get_legend_handles_labels()
-    ax2.legend(handles, ['Hari Libur', 'Hari Kerja'], title='Tipe Hari')
+    ax.set_title("Tren Penyewaan Harian", fontsize=15)
+    ax.set_xlabel(None)
+    ax.set_ylabel("Total Sewa")
+    plt.xticks(rotation=45)
+    st.pyplot(fig)
+    st.write("Grafik ini membantu memantau lonjakan penyewaan pada rentang waktu yang dipilih.")
     
-    st.pyplot(fig2)
-
-
-st.markdown("---")
-st.write("**Kesimpulan:**")
-st.write(
-    "Berdasarkan data di atas, kondisi cuaca yang cerah (Clear) memiliki tingkat penyewaan sepeda yang "
-    "paling tinggi. Hal ini dikarenakan faktor keamanan dan kenyamanan pengguna saat berkendara. "
+# Visualisasi 2: Pertanyaan Bisnis tentang Cuaca
+with col1:
+    st.subheader("1. Pengaruh Cuaca terhadap Penyewaan")
+    # Menghitung rata-rata berdasarkan data yang sudah terfilter
+    weather_rent = main_df.groupby('weathersit_label')['cnt'].mean().reset_index()
     
-)
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.barplot(
+        x='weathersit_label', 
+        y='cnt', 
+        data=weather_rent, 
+        palette='Blues_r',
+        ax=ax,
+        hue='weathersit_label',
+        legend=False
+    )
+    ax.set_title("Rata-rata Penyewaan per Kondisi Cuaca", fontsize=15)
+    ax.set_xlabel(None)
+    ax.set_ylabel("Rata-rata Jumlah Sewa")
+    st.pyplot(fig)
+    st.write("Grafik ini menunjukkan bagaimana kondisi cuaca mempengaruhi minat pengguna untuk bersepeda.")
+
+st.divider()
