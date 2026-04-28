@@ -4,45 +4,100 @@ import seaborn as sns
 import streamlit as st
 import os
 
+# Set konfigurasi halaman (opsional agar tampilan lebih luas)
+st.set_page_config(page_title="Bike Sharing Dashboard", layout="wide")
+
 # 1. Load Data
 current_dir = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(current_dir, "main_data.csv")
 
-# Load main_data (untuk harian/cuaca)
-df = pd.read_csv(os.path.join(current_dir, "main_data.csv"))
+# Membaca data
+df = pd.read_csv(file_path)
 
-# --- TAMBAHAN: Load data jam (untuk grafik pola jam) ---
-# Jika Anda punya hour.csv di folder data, panggil di sini
-# Atau gunakan main_data jika sudah mencakup data jam
-df_hour = df 
+# 2. Judul 
+st.title('Bike Sharing Analysis Dashboard ')
+st.markdown("---")
 
-# 2. Judul Dashboard
-st.header('Bike Sharing Analysis Dashboard 🚲')
-
-# 3. BAGIAN METRIC (Tulis di sini)
+# 3. Menampilkan Metric Utama
+st.subheader("Ringkasan Data")
 col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Total Registered", f"{df['registered'].sum():,}")
-with col2:
-    st.metric("Total Casual", f"{df['casual'].sum():,}")
-with col3:
-    st.metric("Total Pinjaman", f"{df['cnt'].sum():,}")
 
-# 4. Grafik 1: Cuaca (Yang sudah Anda buat)
+with col1:
+    total_registered = df['registered'].sum()
+    st.metric("Total User Terdaftar", value=f"{total_registered:,}")
+
+with col2:
+    total_casual = df['casual'].sum()
+    st.metric("Total User Kasual", value=f"{total_casual:,}")
+
+with col3:
+    total_all = df['cnt'].sum()
+    st.metric("Total Semua Peminjaman", value=f"{total_all:,}")
+
+st.markdown("---")
+
+# 4. Visualisasi 
 st.subheader("Penyewaan Berdasarkan Kondisi Cuaca")
-weather_mapping = {1: 'Clear', 2: 'Misty', 3: 'Light Rain/Snow', 4: 'Heavy Rain'}
-df['weather_label'] = df['weathersit'].map(weather_mapping)
+
+
+if 'weather_label' not in df.columns:
+    weather_mapping = {
+        1: 'Clear', 
+        2: 'Misty', 
+        3: 'Light Rain/Snow', 
+        4: 'Heavy Rain'
+    }
+    df['weather_label'] = df['weathersit'].map(weather_mapping)
+
+
+weather_colors = {
+    'Clear': '#ffcc00',          
+    'Misty': '#99adc1',          
+    'Light Rain/Snow': '#3366cc', 
+    'Heavy Rain': '#1a1a1a'       
+}
 
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.barplot(x='weather_label', y='registered', data=df, ax=ax)
+sns.barplot(
+    x='weather_label', 
+    y='cnt', 
+    data=df, 
+    palette=weather_colors,
+    hue='weather_label',
+    legend=False,
+    ax=ax
+)
+ax.set_xlabel("Kondisi Cuaca")
+ax.set_ylabel("Rata-rata Total Penyewaan")
 st.pyplot(fig)
 
-# 5. BAGIAN POLA JAM (Tulis di sini)
-if 'hr' in df_hour.columns:
-    st.subheader("Pola Penyewaan per Jam")
-    fig2, ax2 = plt.subplots(figsize=(10, 4))
-    # 'workingday' di mapping agar lebih jelas (1: Working Day, 0: Holiday)
-    sns.lineplot(data=df_hour, x='hr', y='cnt', hue='workingday', ax=ax2)
+
+if 'hr' in df.columns:
+    st.markdown("---")
+    st.subheader("Pola Penyewaan per Jam (Hari Kerja vs Libur)")
+    
+    fig2, ax2 = plt.subplots(figsize=(12, 5))
+    sns.lineplot(
+        data=df, 
+        x='hr', 
+        y='cnt', 
+        hue='workingday', 
+        marker='o', 
+        ax=ax2
+    )
+    ax2.set_xlabel("Jam (0-23)")
+    ax2.set_ylabel("Jumlah Peminjaman")
+
+    handles, labels = ax2.get_legend_handles_labels()
+    ax2.legend(handles, ['Hari Libur', 'Hari Kerja'], title='Tipe Hari')
+    
     st.pyplot(fig2)
 
-# 6. PENJELASAN (Tulis di paling bawah)
-st.write("Dashboard ini menunjukkan pengaruh cuaca terhadap jumlah penyewa sepeda. Cuaca cerah (Clear) memiliki tingkat penyewaan tertinggi dibandingkan cuaca hujan/salju.")
+
+st.markdown("---")
+st.write("**Kesimpulan:**")
+st.write(
+    "Berdasarkan data di atas, kondisi cuaca yang cerah (Clear) memiliki tingkat penyewaan sepeda yang "
+    "paling tinggi. Hal ini dikarenakan faktor keamanan dan kenyamanan pengguna saat berkendara. "
+    
+)
