@@ -6,16 +6,20 @@ Proyek ini bertujuan untuk menganalisis data penyewaan sepeda berdasarkan kondis
 ## Dataset
 Dataset yang digunakan adalah "Bike Sharing Dataset" dari Capital Bikeshare.
 
+## Setup Environment - Anaconda
+   ```bash
+   conda create --name bike-sharing python=3.9
+   conda activate bike-sharing
+   pip install -r requirements.txt
+
 ## Setup Environment - Shell/Terminal
-1. Membuat folder proyek:
    ```bash
    mkdir proyek_analisis_data
    cd proyek_analisis_data
-
-2. Instalasi library:
-   ```bash
+   pipenv install
+   pipenv shell
    pip install -r requirements.txt
-   
- Run Streamlit App:
+
+## Run Streamlit App
    ```bash
    streamlit run dashboard/dashboard.py
