@@ -10,80 +10,73 @@ st.set_page_config(page_title="Bike Sharing Dashboard", layout="wide")
 day_df = pd.read_csv("dashboard/main_data.csv")
 day_df['dteday'] = pd.to_datetime(day_df['dteday'])
 
-st.title("Bike Sharing Analysis Dashboard 🚲")
+# Tambahkan kolom bantuan untuk filter
+day_df['year'] = day_df['dteday'].dt.year
+day_df['month'] = day_df['dteday'].dt.month_name()
 
-# --- SIDEBAR (FITUR INTERAKTIF) ---
-st.sidebar.header("Pusat Kontrol Filter")
+# --- SIDEBAR (FILTER BERJENJANG) ---
+st.sidebar.header("Filter Eksplorasi")
 
-# --- FILTER 1: CUACA ---
-st.sidebar.subheader("Filter Grafik Cuaca")
-weather_list = day_df['weathersit_label'].unique()
-selected_weather = st.sidebar.multiselect(
-    "Pilih Kondisi Cuaca:",
-    options=weather_list,
-    default=weather_list
-)
+# 1. Pilih Tahun
+year_options = day_df['year'].unique()
+selected_year = st.sidebar.selectbox("Pilih Tahun", options=year_options)
 
-# --- FILTER 2:---
-st.sidebar.subheader("Filter Grafik Tren")
-min_date = day_df["dteday"].min()
-max_date = day_df["dteday"].max()
+# 2. Pilih Bulan (Berdasarkan Tahun yang dipilih)
+month_options = day_df[day_df['year'] == selected_year]['month'].unique()
+selected_month = st.sidebar.selectbox("Pilih Bulan", options=month_options)
+
+# 3. Pilih Rentang Tanggal (Berdasarkan Tahun & Bulan yang dipilih)
+filtered_by_month_df = day_df[(day_df['year'] == selected_year) & (day_df['month'] == selected_month)]
+min_date = filtered_by_month_df["dteday"].min()
+max_date = filtered_by_month_df["dteday"].max()
 
 start_date, end_date = st.sidebar.date_input(
-    label='Pilih Rentang Tanggal:',
+    label='Rentang Tanggal di Bulan Terpilih',
     min_value=min_date,
     max_value=max_date,
     value=[min_date, max_date]
 )
 
-# --- PROSES FILTERING DATA ---
-# Data untuk grafik cuaca
-weather_filtered_df = day_df[day_df["weathersit_label"].isin(selected_weather)]
+# --- FILTER DATA AKHIR ---
+main_df = day_df[(day_df["dteday"] >= str(start_date)) & 
+                (day_df["dteday"] <= str(end_date))]
 
-# Data untuk grafik tren
-time_filtered_df = day_df[(day_df["dteday"] >= str(start_date)) & 
-                          (day_df["dteday"] <= str(end_date))]
+# --- DASHBOARD DISPLAY ---
+st.title("Bike Sharing Analysis Dashboard 🚲")
+st.markdown(f"Menampilkan data: **{selected_month} {selected_year}** ({start_date} s/d {end_date})")
 
-# --- DISPLAY VISUALISASI ---
 col1, col2 = st.columns(2)
 
+# Visualisasi 1: Cuaca
 with col1:
-    st.subheader("1. Pengaruh Cuaca Terhadap Penyewaan")
-    if len(selected_weather) > 0:
-        fig, ax = plt.subplots(figsize=(10, 8))
-        
-        # Menghitung rata-rata dari data yang difilter cuaca
-        avg_weather = weather_filtered_df.groupby('weathersit_label')['cnt'].mean().reset_index()
-        
-        sns.barplot(
-            x='weathersit_label', 
-            y='cnt', 
-            data=avg_weather, 
-            palette='viridis',
-            ax=ax,
-            hue='weathersit_label',
-            legend=False
-        )
-        ax.set_title("Rata-rata Sewa Berdasarkan Cuaca Pilihan", fontsize=15)
-        st.pyplot(fig)
-    else:
-        st.warning("Silakan pilih minimal satu kondisi cuaca di sidebar.")
-
-with col2:
-    st.subheader("2. Tren Penyewaan Berdasarkan Waktu")
-    fig, ax = plt.subplots(figsize=(10, 8))
+    st.subheader("Rata-rata Sewa Berdasarkan Cuaca")
+    weather_rent = main_df.groupby('weathersit_label')['cnt'].mean().reset_index()
     
-    # Menampilkan tren dari data yang difilter tanggal
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.barplot(
+        x='weathersit_label', 
+        y='cnt', 
+        data=weather_rent, 
+        palette='Blues_r',
+        ax=ax,
+        hue='weathersit_label',
+        legend=False
+    )
+    st.pyplot(fig)
+
+# Visualisasi 2: Tren Harian
+with col2:
+    st.subheader("Tren Penyewaan Harian")
+    fig, ax = plt.subplots(figsize=(10, 6))
     sns.lineplot(
         x='dteday', 
         y='cnt', 
-        data=time_filtered_df, 
+        data=main_df, 
         ax=ax,
-        color='red',
-        linewidth=2
+        marker='o'
     )
     plt.xticks(rotation=45)
-    ax.set_title(f"Tren dari {start_date} s/d {end_date}", fontsize=15)
     st.pyplot(fig)
 
 st.divider()
+st.caption('Copyright (c) 2024 - Devin Rayhan Putra Aswin')
