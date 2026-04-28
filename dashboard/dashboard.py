@@ -14,18 +14,18 @@ day_df['dteday'] = pd.to_datetime(day_df['dteday'])
 day_df['year'] = day_df['dteday'].dt.year
 day_df['month'] = day_df['dteday'].dt.month_name()
 
-# --- SIDEBAR (FILTER BERJENJANG) ---
-st.sidebar.header("Filter Eksplorasi")
+# --- SIDEBAR 
+st.sidebar.header("Filter")
 
 # 1. Pilih Tahun
 year_options = day_df['year'].unique()
 selected_year = st.sidebar.selectbox("Pilih Tahun", options=year_options)
 
-# 2. Pilih Bulan (Berdasarkan Tahun yang dipilih)
+# 2. Pilih Bulan
 month_options = day_df[day_df['year'] == selected_year]['month'].unique()
 selected_month = st.sidebar.selectbox("Pilih Bulan", options=month_options)
 
-# 3. Pilih Rentang Tanggal (Berdasarkan Tahun & Bulan yang dipilih)
+# 3. Pilih Rentang Tanggal 
 filtered_by_month_df = day_df[(day_df['year'] == selected_year) & (day_df['month'] == selected_month)]
 min_date = filtered_by_month_df["dteday"].min()
 max_date = filtered_by_month_df["dteday"].max()
@@ -37,11 +37,11 @@ start_date, end_date = st.sidebar.date_input(
     value=[min_date, max_date]
 )
 
-# --- FILTER DATA AKHIR ---
+# --- FILTER DATA  ---
 main_df = day_df[(day_df["dteday"] >= str(start_date)) & 
                 (day_df["dteday"] <= str(end_date))]
 
-# --- DASHBOARD DISPLAY ---
+# --- DASHBOARD ---
 st.title("Bike Sharing Analysis Dashboard 🚲")
 st.markdown(f"Menampilkan data: **{selected_month} {selected_year}** ({start_date} s/d {end_date})")
 
@@ -79,4 +79,3 @@ with col2:
     st.pyplot(fig)
 
 st.divider()
-st.caption('Copyright (c) 2024 - Devin Rayhan Putra Aswin')
