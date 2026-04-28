@@ -10,6 +10,14 @@ st.set_page_config(page_title="Bike Sharing Dashboard", layout="wide")
 # PENTING: Gunakan data per jam (hour) agar bisa menampilkan perbandingan jam
 df = pd.read_csv("dashboard/main_data_hour.csv") 
 df['dteday'] = pd.to_datetime(df['dteday'])
+if 'weathersit_label' not in df.columns:
+    weather_map = {
+        1: 'Clear',
+        2: 'Misty',
+        3: 'Light Rain/Snow',
+        4: 'Heavy Rain/Snow'
+    }
+    df['weathersit_label'] = df['weathersit'].map(weather_map)
 df['year'] = df['dteday'].dt.year
 df['month'] = df['dteday'].dt.month_name()
 
